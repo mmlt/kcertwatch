@@ -15,6 +15,7 @@ function usage {
     exit $1
 } 
 
+BINARY=kcertwatch
 
 if [[ -z $GITHUB_TOKEN ]]; then
     echo "Error: \$GITHUB_TOKEN needs to be set"
@@ -34,5 +35,5 @@ git tag $VERSION
 git push origin master --tag
 
 echo "Add binaries to github and release"
-gothub release -u mmlt -r apigw -t $VERSION --name $TITLE --pre-release
-gothub upload -u mmlt -r apigw -t $VERSION --name "apigw-linux-amd64" --file ./apigw
+gothub release -u mmlt -r $BINARY -t $VERSION --name $TITLE --pre-release
+gothub upload -u mmlt -r $BINARY -t $VERSION --name "apigw-linux-amd64" --file ./$BINARY

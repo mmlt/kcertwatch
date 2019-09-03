@@ -7,10 +7,10 @@ MODULE=github.com/mmlt/kcertwatch
 all: build test release
 
 build: 
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X main.Version=$(VERSION)" $(MODULE)
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X main.Version=$(VERSION)" .
 
 lint:
-	# TODO replace "gometalinter.v2 --vendor src/$(MODULE)/..." with golangci-lint 
+	golangci-lint run
 
 test: testunit
 

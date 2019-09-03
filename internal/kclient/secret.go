@@ -10,14 +10,7 @@ import (
 func SearchExpiries(data map[string][]byte) (map[string]time.Time, error) {
 	results := map[string]time.Time{}
 	for f, d := range data {
-		//TODO
-		//buf := make([]byte, len(d))
-		//n, err := base64.StdEncoding.Decode(buf, d)
-		//if err != nil {
-		//	return nil, fmt.Errorf("field %v: base64 decode failed", f)
-		//}
-
-		block, _ := pem.Decode(d) //buf[:n])
+		block, _ := pem.Decode(d)
 		if block == nil {
 			// not PEM formatted
 			continue

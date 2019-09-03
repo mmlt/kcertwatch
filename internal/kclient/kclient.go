@@ -49,12 +49,12 @@ func New(kubeclientset kubernetes.Interface, sharedInformers informers.SharedInf
 		client:            kubeclientset,
 		recorder:          recorder,
 		secretStoreSynced: secretInformer.Informer().HasSynced,
-		lastSeen: 		   map[string]time.Time{},
+		lastSeen:          map[string]time.Time{},
 	}
 
 	secretInformer.Informer().AddEventHandler(
 		cache.ResourceEventHandlerFuncs{
-			AddFunc: c.secretAdd,
+			AddFunc:    c.secretAdd,
 			UpdateFunc: c.secretUpdate,
 			DeleteFunc: c.secretDelete,
 		},
@@ -77,16 +77,16 @@ func New(kubeclientset kubernetes.Interface, sharedInformers informers.SharedInf
 // go-routines should respect 'stop' channel and 'wg' when exiting.
 func (kc *kclient) Run(stop chan struct{}, wg *sync.WaitGroup) {
 	wg.Add(1)
+	defer wg.Done()
 	ticker := time.NewTicker(ResyncPeriod)
 	for {
 		select {
 		case <-stop:
-			break;
+			return
 		case <-ticker.C:
-			kc.secretGC(2*ResyncPeriod)
+			kc.secretGC(2 * ResyncPeriod)
 		}
 	}
-	wg.Done()
 }
 
 /***** API Instruction handlers ****************************************************/
@@ -112,7 +112,7 @@ func (kc *kclient) secretAdd(obj interface{}) {
 
 	// add certs seconds to expiry to prometheus and record a last seen time.
 	tn := TimeNow()
-	for f,t := range exps {
+	for f, t := range exps {
 		glog.V(2).Infof("add cert %s %s", knn(secret), f)
 
 		kc.gaugeVec.WithLabelValues(secret.Namespace, secret.Name, f).Set(float64(t.Unix()))
@@ -166,7 +166,7 @@ func (kc *kclient) secretGC(age time.Duration) {
 	toOld := TimeNow().Add(-age)
 	kc.RLock()
 	defer kc.RUnlock()
-	for k,t := range kc.lastSeen {
+	for k, t := range kc.lastSeen {
 		if t.Before(toOld) {
 			var ns, n, f string
 			fmt.Sscanf(k, "%s\n%s\n%s", &ns, &n, &f)

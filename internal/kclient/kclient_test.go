@@ -2,7 +2,7 @@ package kclient
 
 import (
 	"fmt"
-	"github.com/mmlt/kcertscan/internal/testdata"
+	"github.com/mmlt/kcertwatch/internal/testdata"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +19,6 @@ import (
 	"time"
 )
 
-
 // Create a Secret.
 func Test_Create(t *testing.T) {
 	// Setup.
@@ -29,7 +28,7 @@ func Test_Create(t *testing.T) {
 	defer prometheus.Unregister(kc.gaugeVec)
 
 	// Create secret.
-	_, err := client.CoreV1().Secrets("default").Create(newTestSecret("testsecret", testdata.Certs))
+	_, err := client.CoreV1().Secrets("default").Create(newTestSecretOpaque("testsecret", testdata.Certs))
 	assert.NoError(t, err, "secret create")
 	err = waitForChanges(kc, 3)
 	assert.NoError(t, err)
@@ -59,7 +58,7 @@ func Test_CreateThenDelete(t *testing.T) {
 	defer prometheus.Unregister(kc.gaugeVec)
 
 	// Create secret.
-	_, err := client.CoreV1().Secrets("default").Create(newTestSecret("testsecret", testdata.Certs))
+	_, err := client.CoreV1().Secrets("default").Create(newTestSecretOpaque("testsecret", testdata.Certs))
 	assert.NoError(t, err, "secret create")
 	err = waitForChanges(kc, 3)
 	assert.NoError(t, err)
@@ -89,12 +88,12 @@ func Test_CreateThenUpdate(t *testing.T) {
 	defer prometheus.Unregister(kc.gaugeVec)
 
 	// Create secret.
-	_, err := client.CoreV1().Secrets("default").Create(newTestSecret("testsecret", testdata.Certs))
+	_, err := client.CoreV1().Secrets("default").Create(newTestSecretOpaque("testsecret", testdata.Certs))
 	assert.NoError(t, err, "secret create")
 	err = waitForChanges(kc, 3)
 	assert.NoError(t, err)
 	// Update secret (remove certPEM and pubPEM, keep rootPEM)
-	_, err = client.CoreV1().Secrets("default").Update(newTestSecret("testsecret", map[string][]byte{"rootPEM": testdata.Certs["rootPEM"]}))
+	_, err = client.CoreV1().Secrets("default").Update(newTestSecretOpaque("testsecret", map[string][]byte{"rootPEM": testdata.Certs["rootPEM"]}))
 	assert.NoError(t, err, "secret delete")
 	err = waitForChanges(kc, 1)
 	assert.NoError(t, err)
@@ -122,15 +121,16 @@ func Test_CreateThenGC(t *testing.T) {
 	defer prometheus.Unregister(kc.gaugeVec)
 
 	// Create secret.
-	client.CoreV1().Secrets("default").Create(newTestSecret("testsecret", testdata.Certs))
-	err := waitForChanges(kc, 3)
+	_, err := client.CoreV1().Secrets("default").Create(newTestSecretOpaque("testsecret", testdata.Certs))
+	assert.NoError(t, err, "secret create")
+	err = waitForChanges(kc, 3)
 	assert.NoError(t, err)
 
 	// advance time by 3 resync periods to simulate a Secret that has been deleted without getting a delete event.
-	TimeNow = func () time.Time {return time.Now().Add(3*ResyncPeriod)}
+	TimeNow = func() time.Time { return time.Now().Add(3 * ResyncPeriod) }
 
 	// GC Secrets older then 2 periods.
-	kc.secretGC(2*ResyncPeriod)
+	kc.secretGC(2 * ResyncPeriod)
 
 	// Check
 	assert.Equal(t, 3, kc.addTally)
@@ -143,8 +143,6 @@ func Test_CreateThenGC(t *testing.T) {
 	err = testutil.GatherAndCompare(prometheus.DefaultGatherer, strings.NewReader(want), metrics...)
 	assert.NoError(t, err)
 }
-
-
 
 /*** Helpers ******************************************************************/
 
@@ -164,7 +162,7 @@ func startTestController(t *testing.T, stopCh chan struct{}) (*kclient, kubernet
 // WaitForChanges waits till expectedCerts are detected.
 func waitForChanges(kc *kclient, expectedCerts int) error {
 	var n int
-	err := wait.Poll(10*time.Millisecond, time.Second, func() (done bool, err error) {
+	err := wait.Poll(100*time.Millisecond, time.Second, func() (done bool, err error) {
 		kc.RLock()
 		defer kc.RUnlock()
 		n = len(kc.lastSeen)
@@ -192,18 +190,29 @@ func newTestController(initialObjects ...runtime.Object) (*kclient, kubernetes.I
 	return kc, client, sharedInformers, nil
 }
 
-// NewTestSecret returns a Secret with data.
+// NewTestSecretOpaque returns a Secret of type 'opaque' with data.
 // Assumes data values are not yet base64 encoded.
-func newTestSecret(name string, data map[string][]byte) *corev1.Secret {
-	//d := make(map[string][]byte, len(data))
-	//for k,v := range data {
-	//	d[k] = []byte(base64.StdEncoding.EncodeToString(v))
-	//}
+func newTestSecretOpaque(name string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Type: corev1.SecretTypeOpaque, //TODO create tls?
 		Data: data,
+	}
+}
+
+// NewTestSecretTLS returns a Secret of type TLS with key and cert.
+// Assumes key and cert values are not yet base64 encoded.
+func newTestSecretTLS(name string, key, cert []byte) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Type: corev1.SecretTypeTLS,
+		Data: map[string][]byte{
+			"tls.key": key,
+			"tls.crt": cert,
+		},
 	}
 }
