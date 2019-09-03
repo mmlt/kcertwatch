@@ -6,3 +6,4 @@ pkg/
 *.pem
 *.tmp
 _*
+kcertwatch
