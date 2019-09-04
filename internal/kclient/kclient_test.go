@@ -41,9 +41,9 @@ func Test_Create(t *testing.T) {
 	want := `
 # HELP kcertwatch_cert_expire_time_seconds NotAfter time of certificate in seconds.
 # TYPE kcertwatch_cert_expire_time_seconds gauge
-kcertwatch_cert_expire_time_seconds{field="certPEM",name="testsecret",namespace="default"} 1.4013216e+09
-kcertwatch_cert_expire_time_seconds{field="rootPEM",name="testsecret",namespace="default"} 1.428160555e+09
-kcertwatch_cert_expire_time_seconds{field="tls.crt",name="testsecret",namespace="default"} 1.506300437e+09
+kcertwatch_cert_expire_time_seconds{secret_field="certPEM",secret_name="testsecret",secret_namespace="default"} 1.4013216e+09
+kcertwatch_cert_expire_time_seconds{secret_field="rootPEM",secret_name="testsecret",secret_namespace="default"} 1.428160555e+09
+kcertwatch_cert_expire_time_seconds{secret_field="tls.crt",secret_name="testsecret",secret_namespace="default"} 1.506300437e+09
 `
 	err = testutil.GatherAndCompare(prometheus.DefaultGatherer, strings.NewReader(want), metrics...)
 	assert.NoError(t, err)
@@ -106,7 +106,7 @@ func Test_CreateThenUpdate(t *testing.T) {
 	want := `
 # HELP kcertwatch_cert_expire_time_seconds NotAfter time of certificate in seconds.
 # TYPE kcertwatch_cert_expire_time_seconds gauge
-kcertwatch_cert_expire_time_seconds{field="rootPEM",name="testsecret",namespace="default"} 1.428160555e+09
+kcertwatch_cert_expire_time_seconds{secret_field="rootPEM",secret_name="testsecret",secret_namespace="default"} 1.428160555e+09
 `
 	err = testutil.GatherAndCompare(prometheus.DefaultGatherer, strings.NewReader(want), metrics...)
 	assert.NoError(t, err)

@@ -66,7 +66,7 @@ func New(kubeclientset kubernetes.Interface, sharedInformers informers.SharedInf
 			Name:      "cert_expire_time_seconds",
 			Help:      "NotAfter time of certificate in seconds.",
 		},
-		[]string{"namespace", "name", "field"},
+		[]string{"secret_namespace", "secret_name", "secret_field"},
 	)
 	prometheus.MustRegister(c.gaugeVec)
 

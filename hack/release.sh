@@ -36,4 +36,4 @@ git push origin master --tag
 
 echo "Add binaries to github and release"
 gothub release -u mmlt -r $BINARY -t $VERSION --name $TITLE --pre-release
-gothub upload -u mmlt -r $BINARY -t $VERSION --name "apigw-linux-amd64" --file ./$BINARY
+gothub upload -u mmlt -r $BINARY -t $VERSION --name $BINARY"-linux-amd64" --file ./$BINARY

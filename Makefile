@@ -1,6 +1,6 @@
 #.PHONY all build bake push login
 
-VERSION?=v0.0.1
+VERSION?=v0.0.2
 MODULE=github.com/mmlt/kcertwatch
 
 
